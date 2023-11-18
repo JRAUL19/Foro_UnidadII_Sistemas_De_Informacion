@@ -17,6 +17,7 @@ namespace WebApiAutores.Dtos.Book
 
         [DataType(DataType.Date)]
         public DateTime PublicationDate { get; set; }
+        public string ImagenSubida { get; set; }
 
         [Display(Name = "Autor id")]
         [Required(ErrorMessage = "El {0} es requerido")]

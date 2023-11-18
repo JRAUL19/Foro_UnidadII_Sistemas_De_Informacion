@@ -18,6 +18,8 @@ namespace WebApiAutores.Dtos.Book
 
         [DisplayFormat(DataFormatString = "{0:0.0}", ApplyFormatInEditMode = true)]
         public double Valoracion { get; set; }
+        public string ImagenSubida { get; set; }
+        public string ImagenEnCloudinary { get; set; }
 
         public string AutorNombre { get; set; }
 

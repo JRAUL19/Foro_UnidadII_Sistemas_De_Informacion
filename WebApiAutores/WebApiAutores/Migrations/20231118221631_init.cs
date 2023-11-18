@@ -82,7 +82,9 @@ namespace WebApiAutores.Migrations
                     title = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     publication_date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     autor_id = table.Column<int>(type: "int", nullable: false),
-                    valoracion = table.Column<double>(type: "float", nullable: false)
+                    valoracion = table.Column<double>(type: "float", nullable: false),
+                    imagen_subida = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Imagen_En_Cloudinary = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
                 },
                 constraints: table =>
                 {

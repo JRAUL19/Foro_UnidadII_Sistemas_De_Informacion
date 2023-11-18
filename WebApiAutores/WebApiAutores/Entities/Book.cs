@@ -32,6 +32,14 @@ namespace WebApiAutores.Entities
         
         public double Valoracion {  get; set; }
 
+        [Column("imagen_subida")] // imagen subida por el usuario (debe ser imagen guarda en local)
+        [StringLength(255)] 
+        public string ImagenSubida { get; set; }
+
+        [Column("Imagen_En_Cloudinary")] // imagen guarda en cloudinary
+        [StringLength(255)] 
+        public string ImagenEnCloudinary { get; set; }
+
         [ForeignKey(nameof(AutorId))]
         public virtual Autor Autor { get; set; }
 

@@ -258,6 +258,16 @@ namespace WebApiAutores.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("isbn");
 
+                    b.Property<string>("ImagenEnCloudinary")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("Imagen_En_Cloudinary");
+
+                    b.Property<string>("ImagenSubida")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("imagen_subida");
+
                     b.Property<DateTime>("PublicationDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("publication_date");

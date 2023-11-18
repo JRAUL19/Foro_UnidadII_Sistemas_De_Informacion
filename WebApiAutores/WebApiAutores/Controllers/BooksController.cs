@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApiAutores.Dtos;
 using WebApiAutores.Dtos.Book;
 using WebApiAutores.Entities;
+using WebApiAutores.Services;
 
 namespace WebApiAutores.Controllers
 {
@@ -73,11 +76,10 @@ namespace WebApiAutores.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest("Error en la peticion");
+                return BadRequest("Error en la petición");
             }
 
-            var autorExiste = await _context.Autores
-                .AnyAsync(x => x.Id == dto.AutorId);
+            var autorExiste = await _context.Autores.AnyAsync(x => x.Id == dto.AutorId);
 
             if (!autorExiste)
             {
@@ -85,24 +87,50 @@ namespace WebApiAutores.Controllers
                 {
                     Status = false,
                     Message = $"No existe el autor {dto.AutorId}",
-
                 });
             }
+            //////////////////////////////////////////////////////
+            // Subir imagen a Cloudinary
+            var account = new Account(
+                "dxc3qadsk", // cloud name
+                "783854393448399", // api_key
+                "DP-nz6IpqPZatXMgnsivon0Rj2k" // api_secret
+            );
 
-            var book = _mapper.Map<Book>(dto);
+            var cloudinary = new Cloudinary(account);
 
-            _context.Books.Add(book);
-            await _context.SaveChangesAsync();
-
-            var bookDto = _mapper.Map<BookDto>(book);
-
-            return StatusCode(StatusCodes.Status201Created, new ResponseDto<BookDto>
+            try
             {
-                Status = true,
-                Message = "Libro creado correctamente",
-                Data = bookDto
-            });
+                var uploadParams = new ImageUploadParams()
+                {
+                    File = new FileDescription(dto.ImagenSubida), // Ruta local de tu imagen a subir
+                    PublicId = $"book_{Guid.NewGuid()}" // Utilizar un identificador único para cada imagen
+                };
+                var uploadResult = cloudinary.Upload(uploadParams);
+
+                var book = _mapper.Map<Book>(dto);
+
+                book.ImagenEnCloudinary = uploadResult.Url.ToString(); // Guardar la URL de la imagen de Cloudunary
+
+                _context.Books.Add(book);
+                await _context.SaveChangesAsync();
+
+                var bookDto = _mapper.Map<BookDto>(book);
+
+                return StatusCode(StatusCodes.Status201Created, new ResponseDto<BookDto>
+                {
+                    Status = true,
+                    Message = "Libro creado correctamente",
+                    Data = bookDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al subir la imagen a Cloudinary: {ex.Message}");
+            }
         }
+
+
 
         [HttpPut("{id}")]
         public async Task<ActionResult<ResponseDto<BookDto>>> Put(BookUpdateDto dto, Guid id)

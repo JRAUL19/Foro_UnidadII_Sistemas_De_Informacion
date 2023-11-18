@@ -12,7 +12,7 @@ using WebApiAutores.Entities;
 namespace WebApiAutores.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231116185917_init")]
+    [Migration("20231118221631_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -260,6 +260,16 @@ namespace WebApiAutores.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("isbn");
+
+                    b.Property<string>("ImagenEnCloudinary")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("Imagen_En_Cloudinary");
+
+                    b.Property<string>("ImagenSubida")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("imagen_subida");
 
                     b.Property<DateTime>("PublicationDate")
                         .HasColumnType("datetime2")

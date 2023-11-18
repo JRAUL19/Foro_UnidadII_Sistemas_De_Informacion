@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\USER\\Desktop\\Examen_Sistemas_Informacion_Unidad_II\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj": {}
+    "C:\\Users\\USER\\Desktop\\Foro_UnidadII_Sistemas_De_Informacion\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj": {}
   },
   "projects": {
-    "C:\\Users\\USER\\Desktop\\Examen_Sistemas_Informacion_Unidad_II\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj": {
+    "C:\\Users\\USER\\Desktop\\Foro_UnidadII_Sistemas_De_Informacion\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\USER\\Desktop\\Examen_Sistemas_Informacion_Unidad_II\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj",
+        "projectUniqueName": "C:\\Users\\USER\\Desktop\\Foro_UnidadII_Sistemas_De_Informacion\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj",
         "projectName": "WebApiAutores",
-        "projectPath": "C:\\Users\\USER\\Desktop\\Examen_Sistemas_Informacion_Unidad_II\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj",
+        "projectPath": "C:\\Users\\USER\\Desktop\\Foro_UnidadII_Sistemas_De_Informacion\\WebApiAutores\\WebApiAutores\\WebApiAutores.csproj",
         "packagesPath": "C:\\Users\\USER\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\USER\\Desktop\\Examen_Sistemas_Informacion_Unidad_II\\WebApiAutores\\WebApiAutores\\obj\\",
+        "outputPath": "C:\\Users\\USER\\Desktop\\Foro_UnidadII_Sistemas_De_Informacion\\WebApiAutores\\WebApiAutores\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -48,6 +48,10 @@
               "target": "Package",
               "version": "[12.0.1, )"
             },
+            "CloudinaryDotNet": {
+              "target": "Package",
+              "version": "[1.23.0, )"
+            },
             "MailKit": {
               "target": "Package",
               "version": "[4.2.0, )"
@@ -81,6 +85,10 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.5.0, )"
+            },
+            "Tinify": {
+              "target": "Package",
+              "version": "[1.6.0, )"
             }
           },
           "imports": [

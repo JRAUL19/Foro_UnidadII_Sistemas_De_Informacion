@@ -37,6 +37,7 @@ namespace WebApiAutores
             });
 
             services.AddTransient<MiFiltro>();
+
             services.AddTransient<IEmailSenderService, EmailSenderService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
