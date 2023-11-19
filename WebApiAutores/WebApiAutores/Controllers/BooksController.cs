@@ -130,9 +130,8 @@ namespace WebApiAutores.Controllers
             }
         }
 
-
-
         [HttpPut("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<ResponseDto<BookDto>>> Put(BookUpdateDto dto, Guid id)
         {
             var bookDb = await _context.Books.FirstOrDefaultAsync(x => x.Id == id);
@@ -146,8 +145,7 @@ namespace WebApiAutores.Controllers
                 });
             }
 
-            var autorExiste = await _context.Autores
-                .AnyAsync(x => x.Id == dto.AutorId);
+            var autorExiste = await _context.Autores.AnyAsync(x => x.Id == dto.AutorId);
 
             if (!autorExiste)
             {
@@ -158,6 +156,36 @@ namespace WebApiAutores.Controllers
                 });
             }
 
+            // Verifica si se proporciono una nueva imagen
+            if (!string.IsNullOrEmpty(dto.ImagenSubida))
+            {
+                //Cloudinary
+                var account = new Account(
+                    "dxc3qadsk", // cloud name
+                    "783854393448399", // api_key
+                    "DP-nz6IpqPZatXMgnsivon0Rj2k" // api_secret
+                );
+
+                var cloudinary = new Cloudinary(account);
+
+                try
+                {
+                    var uploadParams = new ImageUploadParams()
+                    {
+                        File = new FileDescription(dto.ImagenSubida),
+                        PublicId = $"book_{Guid.NewGuid()}" 
+                    };
+                    var uploadResult = cloudinary.Upload(uploadParams);
+
+                    bookDb.ImagenEnCloudinary = uploadResult.Url.ToString();
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Error al subir la imagen a Cloudinary: {ex.Message}");
+                }
+            }
+
+            // Actualizar otros campos del libro
             _mapper.Map<BookUpdateDto, Book>(dto, bookDb);
 
             _context.Update(bookDb);
@@ -165,15 +193,22 @@ namespace WebApiAutores.Controllers
             await _context.SaveChangesAsync();
 
             var bookDto = _mapper.Map<BookDto>(bookDb);
-            return Ok();
+            return Ok(new ResponseDto<BookDto>
+            {
+                Status = true,
+                Message = "Libro actualizado correctamente",
+                Data = bookDto
+            });
         }
 
+
         [HttpDelete("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<ResponseDto<string>>> Delete(Guid id)
         {
-            var bookExist = await _context.Books.AnyAsync(x => x.Id == id);
+            var book = await _context.Books.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (!bookExist)
+            if (book == null)
             {
                 return NotFound(new ResponseDto<BookDto>
                 {
@@ -182,7 +217,51 @@ namespace WebApiAutores.Controllers
                 });
             }
 
-            _context.Remove(new Book { Id = id });
+            // Verificar si existe una URL de imagen asociada al libro
+            if (!string.IsNullOrEmpty(book.ImagenEnCloudinary))
+            {
+                var account = new Account(
+                    "dxc3qadsk", // cloud name
+                    "783854393448399", // api_key
+                    "DP-nz6IpqPZatXMgnsivon0Rj2k" // api_secret
+                );
+
+                var cloudinary = new Cloudinary(account);
+
+                try
+                {
+                    // Obtener el publicId de la imagen en Cloudinary a partir de la URL almacenada
+                    var publicId = ObtenerPublicIdDesdeURL(book.ImagenEnCloudinary);
+
+                    // Eliminar la imagen de Cloudinary usando el publicId obtenido
+                    var deletionParams = new DeletionParams(publicId);
+                    var deletionResult = await cloudinary.DestroyAsync(deletionParams);
+
+                    // Verificar si la eliminación fue exitosa
+                    if (deletionResult.Result == "ok")
+                    {
+                        // Eliminar el libro si la eliminación de la imagen en Cloudinary fue exitosa
+                        _context.Remove(book);
+                        await _context.SaveChangesAsync();
+
+                        return Ok(new ResponseDto<string>
+                        {
+                            Status = true,
+                            Message = "Libro y su portada en Cloudinary borrados correctamente"
+                        });
+                    }
+                    else
+                    {
+                        return BadRequest("Error al eliminar la portada en Cloudinary");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Error al eliminar la portada en Cloudinary: {ex.Message}");
+                }
+            }
+
+            _context.Remove(book);
             await _context.SaveChangesAsync();
 
             return Ok(new ResponseDto<string>
@@ -191,5 +270,15 @@ namespace WebApiAutores.Controllers
                 Message = "Libro borrado correctamente"
             });
         }
+
+        // obtener el PublicId desde la URL de Cloudinary
+        private string ObtenerPublicIdDesdeURL(string imageUrl)
+        {
+            var uri = new Uri(imageUrl);
+            var publicIdWithExtension = Path.GetFileNameWithoutExtension(uri.Segments.LastOrDefault()?.Trim('/'));
+            var publicId = publicIdWithExtension.Substring(publicIdWithExtension.IndexOf('/') + 1); // Obtener solo el publicId sin la extensión del archivo
+            return publicId;
+        }
+
     }
 }
