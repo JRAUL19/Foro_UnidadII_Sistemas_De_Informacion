@@ -14,6 +14,15 @@ namespace WebApiAutores.Entities
         [StringLength(70)]
         public string Name { get; set; }
 
+        //Direccion de imagen\local
+        [Column("uplodad_img")] 
+        public string ImageSrc { get; set; }
+
+        //Direccion de imagen\Cloudinary
+        [Column("cloudinary_img")] 
+        [StringLength(255)]
+        public string ImageCloudinary { get; set; }
+
         public virtual IEnumerable<Book> Books { get; set; }
     }
 }

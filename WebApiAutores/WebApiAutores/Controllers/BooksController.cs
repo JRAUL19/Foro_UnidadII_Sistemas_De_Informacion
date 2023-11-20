@@ -27,6 +27,7 @@ namespace WebApiAutores.Controllers
             _mapper = mapper;
         }
 
+        //Obtener Libros
         [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<ResponseDto<IReadOnlyList<BookDto>>>> get()
@@ -44,7 +45,8 @@ namespace WebApiAutores.Controllers
             };
         }
 
-        [HttpGet("{id:Guid}")] // api/books/9E343657-45E1-4268-0F14-08DBCA004D0A
+        //Obtener Libros por id (Guid)
+        [HttpGet("{id:Guid}")] 
         [AllowAnonymous]
         public async Task<ActionResult<ResponseDto<BookDto>>> Get(Guid id)
         {
@@ -70,6 +72,7 @@ namespace WebApiAutores.Controllers
             });
         }
 
+        //Crear libros
         [HttpPost]
         [AllowAnonymous]
         public async Task<ActionResult> Post(BookCreateDto dto)
@@ -89,7 +92,7 @@ namespace WebApiAutores.Controllers
                     Message = $"No existe el autor {dto.AutorId}",
                 });
             }
-            //////////////////////////////////////////////////////
+
             // Subir imagen a Cloudinary
             var account = new Account(
                 "dxc3qadsk", // cloud name
@@ -103,14 +106,19 @@ namespace WebApiAutores.Controllers
             {
                 var uploadParams = new ImageUploadParams()
                 {
-                    File = new FileDescription(dto.ImagenSubida), // Ruta local de tu imagen a subir
-                    PublicId = $"book_{Guid.NewGuid()}" // Utilizar un identificador único para cada imagen
+                    //Ruta local de la imagen
+                    File = new FileDescription(dto.ImagenSubida),
+
+                    //Identificador único para cada imagen
+                    PublicId = $"book_{Guid.NewGuid()}"
                 };
+
                 var uploadResult = cloudinary.Upload(uploadParams);
 
                 var book = _mapper.Map<Book>(dto);
 
                 book.ImagenEnCloudinary = uploadResult.Url.ToString(); // Guardar la URL de la imagen de Cloudunary
+
 
                 _context.Books.Add(book);
                 await _context.SaveChangesAsync();
@@ -130,6 +138,7 @@ namespace WebApiAutores.Controllers
             }
         }
 
+        //Editar Libro
         [HttpPut("{id}")]
         [AllowAnonymous]
         public async Task<ActionResult<ResponseDto<BookDto>>> Put(BookUpdateDto dto, Guid id)

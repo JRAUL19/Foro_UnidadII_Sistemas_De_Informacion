@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +15,7 @@ namespace WebApiAutores.Controllers
 {
     [Route("api/autores")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class AutoresController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -26,6 +28,7 @@ namespace WebApiAutores.Controllers
             _mapper = mapper;
         }
 
+        //Obtener Autor
         [HttpGet]
         public async Task<ActionResult<ResponseDto<IReadOnlyList<AutorDto>>>> get()
         {
@@ -40,6 +43,8 @@ namespace WebApiAutores.Controllers
             };
         }
 
+
+        //Obtener Autor por Id
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ResponseDto<AutorGetByIdDto>>> GetOneById(int id) 
         {
@@ -65,29 +70,62 @@ namespace WebApiAutores.Controllers
             });
         }
 
+        //Crear autor
         [HttpPost]
-        public async Task<ActionResult> Post(AutorCreateDto dto) 
+        public async Task<ActionResult> Post(AutorCreateDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest("Error en la peticion");
             }
 
-            var autor = _mapper.Map<Autor>(dto);
+            // Subir imagen a Cloudinary
+            var account = new Account(
+                "webapiautores", // cloud name
+                "657274843415954", // api_key
+                "NfVhYQnqgKo-2biOxXigCMH5yx0" // api_secret
+            );
 
-            _context.Add(autor);
-            await _context.SaveChangesAsync();
+            var cloudinary = new Cloudinary(account);
 
-            var autorDto = _mapper.Map<AutorDto>(autor);
-
-            return StatusCode(StatusCodes.Status201Created, new ResponseDto<AutorDto>
+            try
             {
-                Status = true,
-                Message = "Autor creado correctamente",
-                Data = autorDto
-            });
+                var uploadParams = new ImageUploadParams()
+                {
+                    //Ruta local de la imagen
+                    File = new FileDescription(dto.ImageSrc),
+
+                    //Identificador único para cada imagen
+                    PublicId = $"autor_{Guid.NewGuid()}"
+                };
+
+                var uploadResult = cloudinary.Upload(uploadParams);
+
+                var autorDb = _mapper.Map<Autor>(dto);
+
+                _context.Add(autorDb);
+                await _context.SaveChangesAsync();
+
+                // Guardar la URL de la imagen de Cloudunary
+                autorDb.ImageCloudinary = uploadResult.Url.ToString();
+
+
+                var autorDto = _mapper.Map<AutorDto>(autorDb);
+
+                return StatusCode(StatusCodes.Status201Created, new ResponseDto<AutorDto>
+                {
+                    Status = true,
+                    Message = "Autor creado correctamente",
+                    Data = autorDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al subir la imagen a Cloudinary: {ex.Message}");
+            }
         }
 
+        //Editar autor
         [HttpPut("{id:int}")] // api/autores/4
         public async Task<IActionResult> Put(int id, AutorUpdateDto dto) 
         {
@@ -101,6 +139,36 @@ namespace WebApiAutores.Controllers
                 });
             }
 
+            // Verifica si es una nueva imagen
+            if (!string.IsNullOrEmpty(dto.ImageSrc))
+            {
+                //Cloudinary
+                var account = new Account(
+                   "webapiautores", // cloud name
+                   "657274843415954", // api_key
+                   "NfVhYQnqgKo-2biOxXigCMH5yx0" // api_secret
+                );
+
+                var cloudinary = new Cloudinary(account);
+
+                try
+                {
+                    var uploadParams = new ImageUploadParams()
+                    {
+                        File = new FileDescription(dto.ImageSrc),
+                        PublicId = $"autor_{Guid.NewGuid()}"
+                    };
+                    var uploadResult = cloudinary.Upload(uploadParams);
+
+                    autorDb.ImageCloudinary = uploadResult.Url.ToString();
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Error al subir la imagen a Cloudinary: {ex.Message}");
+                }
+            }
+
+            //Mapeo de datos
             _mapper.Map<AutorUpdateDto, Autor>(dto, autorDb);
 
             _context.Update(autorDb);
@@ -117,6 +185,7 @@ namespace WebApiAutores.Controllers
             });
         }
 
+        //Eliminar Autor
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id) 
         {
@@ -130,6 +199,53 @@ namespace WebApiAutores.Controllers
                 });
             }
 
+            //Eliminar Imagen de Cloudinary
+            // Verificar si existe una URL de imagen asociada al libro
+            if (!string.IsNullOrEmpty(autor.ImageCloudinary))
+            {
+                var account = new Account(
+                    "webapiautores", // cloud name
+                    "657274843415954", // api_key
+                    "NfVhYQnqgKo-2biOxXigCMH5yx0" // api_secret
+                );
+
+                var cloudinary = new Cloudinary(account);
+
+                try
+                {
+                    // Obtener el publicId de la imagen en Cloudinary a partir de la URL almacenada
+                    var publicId = ObtenerPublicIdDesdeURL(autor.ImageCloudinary);
+
+                    // Eliminar la imagen de Cloudinary usando el publicId obtenido
+                    var deletionParams = new DeletionParams(publicId);
+                    var deletionResult = await cloudinary.DestroyAsync(deletionParams);
+
+                    // Verificar si la eliminación fue exitosa
+                    if (deletionResult.Result == "ok")
+                    {
+                        // Eliminar el libro si la eliminación de la imagen en Cloudinary fue exitosa
+                        _context.Remove(autor);
+                        await _context.SaveChangesAsync();
+
+                        return Ok(new ResponseDto<string>
+                        {
+                            Status = true,
+                            Message = @"El autor y su fotografia
+                            en Cloudinary fueron borrados correctamente"
+                        });
+                    }
+                    else
+                    {
+                        return BadRequest("Error al eliminar la fotografia en Cloudinary");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Error al eliminar la fotografia en Cloudinary: {ex.Message}");
+                }
+            }
+
+            //Guardar cambios
             _context.Remove(autor);
             await _context.SaveChangesAsync();
 
@@ -138,6 +254,18 @@ namespace WebApiAutores.Controllers
                 Status = true,
                 Message = "autor borrado correctamente"
             });
+        }
+
+        //Funciones
+        //Obtener PublicId de Url en CloudDinary
+        private string ObtenerPublicIdDesdeURL(string imageUrl)
+        {
+            var uri = new Uri(imageUrl);
+            var publicIdWithExtension = Path.GetFileNameWithoutExtension(uri.Segments.LastOrDefault()?.Trim('/'));
+
+            // Obtener publicId sin extensión de archivo
+            var publicId = publicIdWithExtension.Substring(publicIdWithExtension.IndexOf('/') + 1); 
+            return publicId;
         }
     }
 }
